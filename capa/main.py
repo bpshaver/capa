@@ -23,12 +23,13 @@ import collections
 from typing import Any, Dict, List, Tuple, Callable, Optional
 from pathlib import Path
 
-import halo
 import tqdm
 import colorama
 import tqdm.contrib.logging
 from pefile import PEFormatError
 from elftools.common.exceptions import ELFError
+from yaspin import yaspin
+from yaspin.spinners import Spinners
 
 import capa.perf
 import capa.rules
@@ -568,7 +569,9 @@ def get_extractor(
 
         import capa.features.extractors.binja.extractor
 
-        with halo.Halo(text="analyzing program", spinner="simpleDots", stream=sys.stderr, enabled=not disable_progress):
+        # with halo.Halo(text="analyzing program", spinner="simpleDots", stream=sys.stderr, enabled=not disable_progress):
+        with yaspin(text="analyzing program", spinner=Spinners.simpleDots, color="light_cyan")
+        if not disable_progress else contextlib.nullcontext():
             bv: BinaryView = binaryninja.load(str(path))
             if bv is None:
                 raise RuntimeError(f"Binary Ninja cannot open file {path}")
@@ -583,7 +586,9 @@ def get_extractor(
     elif backend == BACKEND_VIV:
         import capa.features.extractors.viv.extractor
 
-        with halo.Halo(text="analyzing program", spinner="simpleDots", stream=sys.stderr, enabled=not disable_progress):
+        # with halo.Halo(text="analyzing program", spinner="simpleDots", stream=sys.stderr, enabled=not disable_progress):
+        with yaspin(text="analyzing program", spinner=Spinners.simpleDots, color="light_cyan")
+        if not disable_progress else contextlib.nullcontext():
             vw = get_workspace(path, format_, sigpaths)
 
             if should_save_workspace:
