@@ -22,6 +22,7 @@ import contextlib
 import collections
 from typing import Any, Dict, List, Tuple, Callable, Optional
 from pathlib import Path
+from unittest.mock import patch
 
 import tqdm
 import colorama
@@ -569,11 +570,11 @@ def get_extractor(
 
         import capa.features.extractors.binja.extractor
 
-        # with halo.Halo(text="analyzing program", spinner="simpleDots", stream=sys.stderr, enabled=not disable_progress):
-        with yaspin(text="analyzing program", spinner=Spinners.simpleDots, color="light_cyan") if not disable_progress else contextlib.nullcontext():
-            bv: BinaryView = binaryninja.load(str(path))
-            if bv is None:
-                raise RuntimeError(f"Binary Ninja cannot open file {path}")
+        with patch("sys.stdout", sys.stderr):
+            with yaspin(text="analyzing program", spinner=Spinners.simpleDots, color="light_cyan") if not disable_progress else contextlib.nullcontext():
+                bv: BinaryView = binaryninja.load(str(path))
+                if bv is None:
+                    raise RuntimeError(f"Binary Ninja cannot open file {path}")
 
         return capa.features.extractors.binja.extractor.BinjaFeatureExtractor(bv)
 
@@ -585,19 +586,19 @@ def get_extractor(
     elif backend == BACKEND_VIV:
         import capa.features.extractors.viv.extractor
 
-        # with halo.Halo(text="analyzing program", spinner="simpleDots", stream=sys.stderr, enabled=not disable_progress):
-        with yaspin(text="analyzing program", spinner=Spinners.simpleDots, color="light_cyan") if not disable_progress else contextlib.nullcontext():
-            vw = get_workspace(path, format_, sigpaths)
+        with patch("sys.stdout", sys.stderr):
+            with yaspin(text="analyzing program", spinner=Spinners.simpleDots, color="light_cyan") if not disable_progress else contextlib.nullcontext():
+                vw = get_workspace(path, format_, sigpaths)
 
-            if should_save_workspace:
-                logger.debug("saving workspace")
-                try:
-                    vw.saveWorkspace()
-                except IOError:
-                    # see #168 for discussion around how to handle non-writable directories
-                    logger.info("source directory is not writable, won't save intermediate workspace")
-            else:
-                logger.debug("CAPA_SAVE_WORKSPACE unset, not saving workspace")
+                if should_save_workspace:
+                    logger.debug("saving workspace")
+                    try:
+                        vw.saveWorkspace()
+                    except IOError:
+                        # see #168 for discussion around how to handle non-writable directories
+                        logger.info("source directory is not writable, won't save intermediate workspace")
+                else:
+                    logger.debug("CAPA_SAVE_WORKSPACE unset, not saving workspace")
 
         return capa.features.extractors.viv.extractor.VivisectFeatureExtractor(vw, path, os_)
 
